@@ -10,13 +10,13 @@ int main (void)
     listDump (info, List);
     printf ("info.size = %zu\n", info.size);
     // printf ("1\n");
-    PushBack (&List, &info, 6);
+    PushFront (&List, &info, 6);
     listDump (info, List);
 
     PushBack (&List, &info, 10);
     listDump (info, List);
 
-    PushBack (&List, &info, 3);
+    PushFront (&List, &info, 3);
     listDump (info, List);
     // printf ("4\n");
 }
@@ -66,7 +66,7 @@ size_t PushBack (list_t ** List, info_t * listInfo, elem_t newMemb)
         (*List)[newPlace].next = listInfo->head;
         (*List)[newPlace].prev = 1; 
     }
-    else /*if (listInfo->size == 2)*/ 
+    else 
     {
         (*List)[newPlace].data = newMemb;
         (*List)[newPlace].next = listInfo->head;
@@ -74,10 +74,6 @@ size_t PushBack (list_t ** List, info_t * listInfo, elem_t newMemb)
 
         (*List)[oldPlace].next = newPlace;
     }
-    // else
-    // {
-
-    // }
 
     listInfo->tail = newPlace;
     (*List)[firstMem].prev = listInfo->tail;
@@ -85,13 +81,6 @@ size_t PushBack (list_t ** List, info_t * listInfo, elem_t newMemb)
     return newPlace;
     
 }
-
-// size_t findNewFreePlace (size_t * list, info_t listInfo);
-// {
-//     MY_ASSERT (list == nullptr, "There is no access to the list");
-
-//     return listInfo.freePlace;
-// }
 
 void listResize (list_t ** List, info_t * listInfo)
 {
@@ -186,7 +175,38 @@ void listDump (info_t info, list_t * List)
     // printf ("666\n");
 }  
     
-// size_t PushFront (list_t ** List, info_t * listInfo, elem_t newMemb)
-// {
-    
-// } 
+size_t PushFront (list_t ** List, info_t * listInfo, elem_t newMemb)
+{
+    listInfo->size++;
+    if (listInfo->size >= listInfo->capacity)
+    {
+        listResize (List, listInfo);
+    }
+
+    size_t newPlace = listInfo->freePlace;
+    size_t lastMem = listInfo->tail; //lastMem
+    size_t firstMem = listInfo->head;
+
+    listInfo->freePlace = (*List)[listInfo->freePlace].next;
+
+    if (listInfo->size == 1)
+    {
+        (*List)[newPlace].data = newMemb;
+        (*List)[newPlace].next = listInfo->head;
+        (*List)[newPlace].prev = 1;
+    }
+    else
+    {
+        (*List)[newPlace].data = newMemb;
+        (*List)[newPlace].next = firstMem;
+        (*List)[newPlace].prev = lastMem;
+
+        (*List)[lastMem].next = newPlace;
+    }
+
+    listInfo->head = newPlace;
+    (*List)[firstMem].prev = listInfo->head;
+
+    return newPlace;
+} 
+

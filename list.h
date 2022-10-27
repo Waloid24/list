@@ -31,3 +31,4 @@ void listResize (list_t ** List, info_t * listInfo);
 void fillingNewFields (list_t * list, size_t start, size_t finish);
 void listDump (info_t info, list_t * List);
 size_t PushBack (list_t ** List, info_t * listInfo, elem_t newMemb);
+size_t PushFront (list_t ** List, info_t * listInfo, elem_t newMemb);
