@@ -258,8 +258,8 @@ size_t   PushFront               (list_t ** List,     info_t * listInfo, elem_t 
 
 size_t   ListInsertBeforeThisNum (list_t ** List,     info_t * listInfo, elem_t newMemb, size_t num_of_count)
 {
-    listInfo->size++;
-    if (listInfo->size == 1 || listInfo->size == 2)
+    
+    if (listInfo->size == 0 || listInfo->size == 1 || num_of_count == 0 || num_of_count == 1)
         return PushFront (List, listInfo, newMemb);
     else 
     {
@@ -272,6 +272,8 @@ size_t   ListInsertBeforeThisNum (list_t ** List,     info_t * listInfo, elem_t 
         {
             return PushBack(List, listInfo, newMemb);
         }
+
+        listInfo->size++;
 
         size_t indexThisNum = (*List)[listInfo->head].next;
         for (int i = 1; i < listInfo->size && i < num_of_count-1; i++)
@@ -301,8 +303,7 @@ size_t   ListInsertBeforeThisNum (list_t ** List,     info_t * listInfo, elem_t 
 
 size_t   ListInsertAfterThisNum  (list_t ** List,     info_t * listInfo, elem_t newMemb, size_t num_of_count)
 {
-    listInfo->size++;
-    if (listInfo->size == 1 || listInfo->size == 2)
+    if (listInfo->size == 0 || listInfo->size == 1)
         return PushFront (List, listInfo, newMemb);
     else 
     {
@@ -319,6 +320,8 @@ size_t   ListInsertAfterThisNum  (list_t ** List,     info_t * listInfo, elem_t 
             printf ("YYEESS\n");
             return PushBack(List, listInfo, newMemb);
         }
+
+        listInfo->size++;
 
         size_t indexThisNum = (*List)[listInfo->head].next;
         for (int i = 1; i < listInfo->size && i < num_of_count; i++)
@@ -473,7 +476,7 @@ list_t * ListSort (list_t ** List, info_t * listInfo)
     for (int i = 1; i <= listInfo->size; i++)
     {
         newList[i] = (*List)[start];
-        printf ("newList[%d].data = %lf\n", i, newList[i].data);
+        // printf ("newList[%d].data = %lf\n", i, newList[i].data);
         start = (*List)[start].next;
         newList[i].next = i + 1;
         newList[i].prev = i - 1;
@@ -491,6 +494,16 @@ list_t * ListSort (list_t ** List, info_t * listInfo)
     listInfo->head = 1;
     listInfo->tail = listInfo->size;
 
+    free (*List);
+
     return newList;
 }
 
+void Graphviz (list * List, info_t * listInfo)
+{
+    FILE * dumpGraph = fopen ("dumpGraphviz.dot", "w");
+
+    fprintf ("")
+
+    system ("dot -Tjpg dumpGraphviz.dot -o graph1.png");
+}
