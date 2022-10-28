@@ -30,5 +30,22 @@ list_t * listConstruct (info_t * listInfo, size_t customCapacity);
 void listResize (list_t ** List, info_t * listInfo);
 void fillingNewFields (list_t * list, size_t start, size_t finish);
 void listDump (info_t info, list_t * List);
+void ListDestructor (list_t ** List, info_t * listInfo);
+void ListDeleteThisElem (list_t * List, info_t * listInfo, size_t num_of_count);
+
 size_t PushBack (list_t ** List, info_t * listInfo, elem_t newMemb);
 size_t PushFront (list_t ** List, info_t * listInfo, elem_t newMemb);
+size_t ListInsertBeforeThisNum (list_t ** List, info_t * listInfo, elem_t newMemb, size_t num_of_count);
+size_t ListInsertAfterThisNum (list_t ** List, info_t * listInfo, elem_t newMemb, size_t num_of_count);
+
+size_t AccessFirstElem (info_t * info);
+size_t AccessLastElem (info_t * info);
+size_t ListEmpty (info_t * info);
+size_t ListSize (info_t * info);
+size_t IndexAfterThisElem (list_t * List, info_t * info, size_t num_of_count);
+size_t IndexBeforeThisElem (list_t * List, info_t * listInfo, size_t num_of_count);
+
+elem_t FindElemLogNum (list_t * List, info_t * listInfo, size_t num_of_count);
+size_t FindElemByValue (list_t * List, info_t * listInfo, elem_t num_of_count);
+
+list_t * ListSort (list_t ** List, info_t * listInfo);

@@ -5,25 +5,71 @@
 int main (void)
 {
     info_t info = {};
-    list_t * List = listConstruct (&info, 3); //фактически, сейчас это список свободных элементов
+    list_t * List = listConstruct (&info, 3); 
     printf ("Ctor\n");
     listDump (info, List);
     printf ("info.size = %zu\n", info.size);
     // printf ("1\n");
-    PushFront (&List, &info, 6);
+    PushFront (&List, &info, 31);
     listDump (info, List);
 
-    PushBack (&List, &info, 10);
+    PushBack (&List, &info, 87);
     listDump (info, List);
 
-    PushFront (&List, &info, 3);
+    PushFront (&List, &info, 65);
     listDump (info, List);
-    // printf ("4\n");
+
+    // PushBack (&List, &info, 7);
+    // listDump (info, List);
+
+    ListInsertBeforeThisNum (&List, &info, 50, 2);
+    listDump (info, List);
+
+    ListInsertAfterThisNum (&List, &info, 71, 4);
+    listDump (info, List);
+
+    PushFront (&List, &info, 23);
+    listDump (info, List);
+
+    // PushBack (&List, &info, 15);
+    // listDump (info, List);
+
+    // ListDeleteThisElem (List, &info, 3);
+    // listDump (info, List);
+
+    // PushBack (&List, &info, 89);
+    // listDump (info, List);
+
+    // PushFront (&List, &info, 33);
+    // listDump (info, List);
+
+    // size_t a = FindElemByValue (List, &info, 8);
+    // printf ("a = %zu\n", a);
+
+    list_t * newList = ListSort (&List, &info);
+    listDump (info, newList);
+
+    // size_t ip = IndexAfterThisElem (&List, &info, 5);
+    // printf ("ip = %zu\n", ip);
+
+    // size_t ip1 = IndexBeforeThisElem (&List, &info, 4);
+    // printf ("ip1 = %zu\n", ip1);
+
+    // ListDestructor (&List, &info);
+    // listDump (info, List);
 }
 
+void     ListDestructor          (list_t ** List,     info_t * info)
+{
+    free (*List);
+    info->size      = 0;
+    info->capacity  = 0;
+    info->freePlace = 0;
+    info->tail      = 0;
+    info->head      = 0;
+}
 
-
-list_t * listConstruct (info_t * listInfo, size_t customCapacity)
+list_t * listConstruct           (info_t *  listInfo, size_t   customCapacity)
 {
     if (customCapacity == 0 || customCapacity == 1)
     {
@@ -44,8 +90,7 @@ list_t * listConstruct (info_t * listInfo, size_t customCapacity)
     return list;
 }
 
-
-size_t PushBack (list_t ** List, info_t * listInfo, elem_t newMemb)
+size_t   PushBack                (list_t ** List,     info_t * listInfo, elem_t newMemb)
 {
     listInfo->size++;
     if (listInfo->size >= listInfo->capacity)
@@ -58,6 +103,7 @@ size_t PushBack (list_t ** List, info_t * listInfo, elem_t newMemb)
     size_t firstMem = listInfo->head;
 
     listInfo->freePlace = (*List)[listInfo->freePlace].next;
+    printf ("freePlace = %zu\n", listInfo->freePlace);
     
 
     if (listInfo->size == 1)
@@ -82,7 +128,7 @@ size_t PushBack (list_t ** List, info_t * listInfo, elem_t newMemb)
     
 }
 
-void listResize (list_t ** List, info_t * listInfo)
+void     listResize              (list_t ** List,     info_t * listInfo)
 {
     list_t * newPlace = (list_t *) realloc (*List, listInfo->capacity * 2 * sizeof (list_t));
     MY_ASSERT (newPlace == nullptr, "Unable to allocate new memory");
@@ -95,7 +141,7 @@ void listResize (list_t ** List, info_t * listInfo)
     listInfo->capacity = listInfo->capacity * 2;    
 }
 
-void fillingNewFields (list_t * list, size_t start, size_t finish) //заполняет от start до finish включительно
+void     fillingNewFields        (list_t *  list,     size_t   start,    size_t finish) 
 {
     for (int i = start; i < finish; i++)
     {
@@ -108,7 +154,7 @@ void fillingNewFields (list_t * list, size_t start, size_t finish) //запол�
     list[finish].data = poison;
 }
 
-void listDump (info_t info, list_t * List)
+void     listDump                (info_t    info,     list_t * List)
 {
     //printf ("4444444444444444444444\n");
     #ifdef CLEAR_LOGFILE
@@ -175,7 +221,7 @@ void listDump (info_t info, list_t * List)
     // printf ("666\n");
 }  
     
-size_t PushFront (list_t ** List, info_t * listInfo, elem_t newMemb)
+size_t   PushFront               (list_t ** List,     info_t * listInfo, elem_t newMemb)
 {
     listInfo->size++;
     if (listInfo->size >= listInfo->capacity)
@@ -209,4 +255,242 @@ size_t PushFront (list_t ** List, info_t * listInfo, elem_t newMemb)
 
     return newPlace;
 } 
+
+size_t   ListInsertBeforeThisNum (list_t ** List,     info_t * listInfo, elem_t newMemb, size_t num_of_count)
+{
+    listInfo->size++;
+    if (listInfo->size == 1 || listInfo->size == 2)
+        return PushFront (List, listInfo, newMemb);
+    else 
+    {
+        if (listInfo->size >= listInfo->capacity)
+        {
+            listResize (List, listInfo);
+        }
+
+        if (num_of_count > listInfo->size)
+        {
+            return PushBack(List, listInfo, newMemb);
+        }
+
+        size_t indexThisNum = (*List)[listInfo->head].next;
+        for (int i = 1; i < listInfo->size && i < num_of_count-1; i++)
+        {
+            indexThisNum = (*List)[indexThisNum].next;
+        }
+        //printf ("this number is %lf\n", (*List)[indexThisNum].data);
+        
+        size_t newPlace = listInfo->freePlace;
+        size_t countBeforeNewElem = (*List)[indexThisNum].prev;
+        size_t countAfterNewElem  = indexThisNum;
+        listInfo->freePlace = (*List)[listInfo->freePlace].next;
+
+        //printf ("count before this elem is %lf\n", (*List)[countBeforeNewElem].data);
+        //printf ("count after new elem is %lf\n", (*List)[countAfterNewElem].data);
+
+        (*List)[newPlace].data = newMemb;
+        (*List)[newPlace].prev = countBeforeNewElem;
+        (*List)[newPlace].next = countAfterNewElem;
+
+        (*List)[countBeforeNewElem].next = newPlace;
+        (*List)[countAfterNewElem].prev  = newPlace; //.........
+
+        return indexThisNum;
+    }
+}
+
+size_t   ListInsertAfterThisNum  (list_t ** List,     info_t * listInfo, elem_t newMemb, size_t num_of_count)
+{
+    listInfo->size++;
+    if (listInfo->size == 1 || listInfo->size == 2)
+        return PushFront (List, listInfo, newMemb);
+    else 
+    {
+        if (listInfo->size >= listInfo->capacity)
+        {
+            listResize (List, listInfo);
+        }
+
+        printf ("num_of_count = %zu\n", num_of_count);
+        printf ("listInfo->size = %zu\n", listInfo->size);
+
+        if (num_of_count >= listInfo->size)
+        {
+            printf ("YYEESS\n");
+            return PushBack(List, listInfo, newMemb);
+        }
+
+        size_t indexThisNum = (*List)[listInfo->head].next;
+        for (int i = 1; i < listInfo->size && i < num_of_count; i++)
+        {
+            indexThisNum = (*List)[indexThisNum].next;
+        }
+        //printf ("this number is %lf\n", (*List)[indexThisNum].data);
+        
+        size_t newPlace = listInfo->freePlace;
+        size_t countBeforeNewElem = (*List)[indexThisNum].prev;
+        size_t countAfterNewElem  = indexThisNum;
+        listInfo->freePlace = (*List)[listInfo->freePlace].next;
+
+        //printf ("count before this elem is %lf\n", (*List)[countBeforeNewElem].data);
+        //printf ("count after new elem is %lf\n",   (*List)[countAfterNewElem].data );
+
+        (*List)[newPlace].data = newMemb;
+        (*List)[newPlace].prev = countBeforeNewElem;
+        (*List)[newPlace].next = countAfterNewElem;
+
+        (*List)[countBeforeNewElem].next = newPlace;
+        (*List)[countAfterNewElem].prev  = newPlace; //.........
+
+        return indexThisNum;
+    }
+}
+
+size_t   AccessFirstElem         (info_t *  info)
+{
+    MY_ASSERT (info == nullptr, "There is no access to list");
+
+    return info->head;
+}
+
+size_t   AccessLastElem          (info_t *  info)
+{
+    MY_ASSERT (info == nullptr, "There is no access to list");
+
+    return info->tail;
+}
+
+size_t      ListEmpty               (info_t *  info)
+{
+    MY_ASSERT (info == nullptr, "There is no access to list");
+
+    return info->size;
+}
+
+size_t      ListSize                (info_t *  info)
+{
+    MY_ASSERT (info == nullptr, "There is no access to list");
+
+    return info->size;
+}
+
+size_t   IndexAfterThisElem      (list_t * List,      info_t * listInfo, size_t num_of_count)
+{
+    MY_ASSERT (List == nullptr, "There is no access to list");
+
+    size_t indexThisNum = List[listInfo->head].next;
+    for (int i = 1; i < listInfo->size && i < num_of_count-1; i++)
+    {
+        indexThisNum = List[indexThisNum].next;
+    }
+    printf ("this number is %lf\n", List[indexThisNum].data);
+
+    return List[indexThisNum].next;
+}
+
+size_t   IndexBeforeThisElem     (list_t * List,      info_t * listInfo, size_t num_of_count)
+{
+    MY_ASSERT (List == nullptr, "There is no access to list");
+
+    size_t indexThisNum = List[listInfo->head].next;
+    //printf ("indexThisNum before = %zu\n", indexThisNum);
+    for (int i = 1; i < listInfo->size && i < num_of_count-1; i++)
+    {
+        indexThisNum = List[indexThisNum].next;
+    }
+    //printf ("this number is %lf\n", List[indexThisNum].data);
+    //printf ("indexThisNum after = %zu\n", indexThisNum);
+
+    return List[indexThisNum].prev;
+}
+
+void     ListDeleteThisElem      (list_t * List,      info_t * listInfo, size_t num_of_count)
+{
+    MY_ASSERT (List == nullptr, "There is no access to list");
+
+    size_t indexThisNum = List[listInfo->head].next;
+    
+    for (int i = 1; i < listInfo->size && i < num_of_count-1; i++)
+    {
+        indexThisNum = List[indexThisNum].next;
+    }
+    //printf ("this number is %lf\n", List[indexThisNum].data);
+    
+    List[indexThisNum].data = NAN;
+    List[indexThisNum].prev = -1;
+    List[indexThisNum].next = listInfo->freePlace;
+
+    listInfo->size--;
+
+    listInfo->freePlace = indexThisNum;
+}
+
+elem_t   FindElemLogNum          (list_t * List,      info_t * listInfo, size_t num_of_count)
+{
+    MY_ASSERT (List == nullptr, "There is no access to list");
+
+    size_t indexThisNum = List[listInfo->head].next;
+    
+    for (int i = 1; i < listInfo->size && i < num_of_count-1; i++)
+    {
+        indexThisNum = List[indexThisNum].next;
+    }
+
+    return List[indexThisNum].data;
+}
+
+size_t   FindElemByValue         (list_t * List,      info_t * listInfo, elem_t num_of_count)
+{
+    MY_ASSERT (List == nullptr, "There is no access to list");
+    
+    size_t indexThisNum = List[listInfo->head].next;
+
+    printf ("\n");
+
+    for (int i = 1; i < listInfo->size; i++)
+    {
+        if (List[indexThisNum].data == num_of_count)
+            return indexThisNum;
+        indexThisNum = List[indexThisNum].next;
+
+        printf ("List[%zu].data = %lf\n", indexThisNum, List[indexThisNum].data);
+    }
+
+    printf ("This number doesn't find\n");
+    printf ("\n");
+
+    return -1;
+}
+
+list_t * ListSort (list_t ** List, info_t * listInfo)
+{
+    MY_ASSERT (*List == nullptr, "There is no access to list");
+    list_t * newList = (list_t *) calloc (listInfo->capacity, sizeof(list_t));
+
+    newList[0] = (*List)[0];
+
+    size_t start = listInfo->head;
+    for (int i = 1; i <= listInfo->size; i++)
+    {
+        newList[i] = (*List)[start];
+        printf ("newList[%d].data = %lf\n", i, newList[i].data);
+        start = (*List)[start].next;
+        newList[i].next = i + 1;
+        newList[i].prev = i - 1;
+    }
+
+    for (int i = listInfo->size+1; i < listInfo->capacity; i++)
+    {
+        newList[i] = (*List)[i];
+        newList[i].prev = -1;
+    }
+
+    newList[1].prev = listInfo->size;
+    newList[listInfo->size].next = 1;
+
+    listInfo->head = 1;
+    listInfo->tail = listInfo->size;
+
+    return newList;
+}
 
