@@ -281,6 +281,24 @@ void listDeleteElem (listPtr_t * list, struct listElement * currentElem)
     MY_ASSERT (list == nullptr, "There is no access to list");
     MY_ASSERT (currentElem == nullptr, "Unable to find this element");
 
+    if (list->size == 1)
+    {
+        currentElem->data = poison;
+        currentElem->next = nullptr;
+        currentElem->prev = nullptr;
+
+        list->ptrToList[0].prev = list->ptrToList[0].next = &(list->ptrToList[0]);
+    }
+
+    if (currentElem == list->ptrToList[0].prev)
+    {
+        list->ptrToList[0].prev = list->ptrToList[0].prev->next;
+    }
+    if (currentElem == list->ptrToList[0].next)
+    {
+        list->ptrToList[0].next = list->ptrToList[0].next->prev;
+    }
+
     currentElem->prev->next = currentElem->next;
     currentElem->next->prev = currentElem->prev;
 
@@ -291,28 +309,28 @@ void listDeleteElem (listPtr_t * list, struct listElement * currentElem)
     list->size--;
 }
 
-struct listElement * AccessFirstElem (listPtr_t * list)
+struct listElement * AccessFirstElem (const listPtr_t * list)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
 
     return list->ptrToList[0].prev;
 }
 
-struct listElement * AccessLastElem (listPtr_t * list)
+struct listElement * AccessLastElem (const listPtr_t * list)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
 
     return list->ptrToList[0].next;
 }
 
-size_t listSize (listPtr_t * list)
+size_t listSize (const listPtr_t * list)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
 
     return list->size;
 }
 
-struct listElement * listFindElemByValue (listPtr_t * list, elem_t value)
+struct listElement * listFindElemByValue (const listPtr_t * list, elem_t value)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
     
@@ -326,7 +344,7 @@ struct listElement * listFindElemByValue (listPtr_t * list, elem_t value)
     return current;
 }
 
-struct listElement * listFindElemByNumber (listPtr_t * list, elem_t number)
+struct listElement * listFindElemByNumber (const listPtr_t * list, elem_t number)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
 
