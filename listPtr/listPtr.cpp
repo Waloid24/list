@@ -1,97 +1,66 @@
 #include "listPtr.h"
 
-int main (void) //добавить везде const
+#define LONG_LINE "###################################################################\n"
+#define dumpline(string, ...) fprintf (ptrGraph, string, ##__VA_ARGS__);
+#define print_html(command, ...) fprintf(graphicBuf, command, ##__VA_ARGS__);
+
+static void cmdLine (int num, const char * nameDOTfile)
 {
-    listPtr_t list = {};
-    struct listElement * listCreat = ListConstruct(&list);
+    MY_ASSERT (nameDOTfile == nullptr, "Unexpected file reading error");
 
-    listDump (&list);
-    PushFront (&list, 20);
-    listDump (&list);
-
-    struct listElement * after = PushBack (&list, 65);
-    listDump (&list);
-
-    PushBack (&list, 73);
-    listDump (&list);
-
-    ListInsertBefore (&list, after, 45);
-    listDump (&list);
-
-    PushFront (&list, 101);
-    listDump (&list);
-
-    listGraphviz(&list);
-
-    struct listElement * noValid = validator (&list);
-    // if (noValid == nullptr)
-    // {
-    //     printf ("999\n");
-    // }
-    // else 
-    // {
-    //     printf ("noValid->data = %.2lf\n", noValid->data);
-    // }
-
-    // struct listElement * finder = listFindElemByValue(&list, 65);
-    // printf ("finder->data = %.2lf\n", finder->data);
-
-    // struct listElement * byNum = listFindElemByNumber(&list, 2);
-    // printf ("byNum->data = %.2lf\n", byNum->data);
-
-
-    // listDeleteElem(&list, after);
-    // listDump (&list);
-
-    // ListInsertAfter (&list, after, 31);
-    // listDump (&list);
-
-    // listDestructor (&list);
-    // listDump (&list);
-
-    //printf ("list = %p\n", &list);
+    char buf[100] = {};
+    sprintf(buf, "dot -T png -o graph%d.png %s", num, nameDOTfile);
+    system(buf);
 }
 
-struct listElement * ListConstruct (listPtr_t * list)
+static void createHTMLfile (int * num, FILE * graphicBuf)
 {
-    list->ptrToList = (struct listElement *) calloc (1, sizeof (listElement));
+    MY_ASSERT (graphicBuf == nullptr, "Unable to access to file");
+
+    char buf[60] = {};
+    sprintf (buf, "graph%d.png", *num);
+
+    print_html("<pre>\n");
+    print_html("<img src=\"%s\" alt=\"dump №%d\"/>\n", buf, *num);
+    print_html("</pre>\n");
+
+    (*num)++;
+
+    fflush (graphicBuf);
+    fclose (graphicBuf);
+}
+
+void listConstruct (listPtr_t * list)
+{
+    MY_ASSERT (list == nullptr, "There is no access to list");
+
+    list->ptrToList = (struct listElement_t *) calloc (1, sizeof (listElement_t));
 
     MY_ASSERT(list->ptrToList == nullptr, "Unable to allocate memory for the list");
 
-    // printf ("\nIn CONSTRUCT before operations\n");
-    // printf ("list->ptrToList[0].prev = %p\n", list->ptrToList[0].prev);
-    // printf ("list->ptrToList[0].next = %p\n", list->ptrToList[0].next);
-
-    list->ptrToList[0].data = poison;
-    list->ptrToList[0].prev = list->ptrToList[0].next = &(list->ptrToList[0]); //в нулевом эл-те prev == head
-                                                                            //                next == tail                                                                     
-    // printf ("\nIn CONSTRUCT after operations\n");
-    // printf ("list->ptrToList[0].prev = %p\n", list->ptrToList[0].prev);
-    // printf ("list->ptrToList[0].next = %p\n", list->ptrToList[0].next);
-    // printf ("data in tail and head: %.2lf and %.2lf\n\n", list->ptrToList[0].prev->data, list->ptrToList[0].next->data);
-
-    return &(list->ptrToList[0]);
+    list->ptrToList[0].data = POISON_LISTPTR;
+    list->ptrToList[0].prev = list->ptrToList[0].next = &(list->ptrToList[0]);
 }
 
-void listDump (const listPtr_t * list)
+void listDump (const listPtr_t * list, FILE * log)
 {
     MY_ASSERT (list == nullptr, "There is no access to list file");
-    FILE * log = fopen ("log.txt", "a");
     MY_ASSERT(log == nullptr, "There is no access to log file");
+
+    setbuf(log, NULL);
 
     fprintf (log, LONG_LINE);
 
     fprintf (log, "list.size = %zu\n", list->size);
-    
     fprintf (log, "data in fucken element is %.2lf\n\n", list->ptrToList[0].data);
 
     fprintf (log, "data: ");
 
-    struct listElement * currentElem = (list->ptrToList)[0].prev;
+    struct listElement_t * currentElem = (list->ptrToList)[0].prev;
     for (int i = 0; i < list->size; i++)
     {
         fprintf (log, "%.2lf ", currentElem->data);
-        currentElem = ptrListElemNext(currentElem);
+        currentElem = listPtrToNextElement(currentElem);
     }
 
     fprintf (log,"\nnext: ");
@@ -100,7 +69,7 @@ void listDump (const listPtr_t * list)
     for (int i = 0; i < list->size; i++)
     {
         fprintf (log, "%.2lf ", currentElem->next->data);
-        currentElem = ptrListElemNext(currentElem);
+        currentElem = listPtrToNextElement(currentElem);
     }
 
     fprintf (log, "\nprev: ");
@@ -109,41 +78,26 @@ void listDump (const listPtr_t * list)
     for (int i = 0; i < list->size; i++)
     {
         fprintf (log, "%.2lf ", currentElem->prev->data);
-        currentElem = ptrListElemNext(currentElem);
-    } 
+        currentElem = listPtrToNextElement(currentElem);
+    }
 
     fprintf (log, "\n");
     fprintf (log, LONG_LINE);
     fprintf (log, "\n\n");
 
-
     fflush (log);
-    fclose (log);
+
 }
 
-struct listElement * ptrListElemNext (struct listElement * currentElem)
-{
-    MY_ASSERT (currentElem == nullptr, "There is no access to current element");
-    
-    return currentElem->next; 
-}
-
-struct listElement * ptrListElemPrev (struct listElement * currentElem)
-{
-    MY_ASSERT (currentElem == nullptr, "There is no access to current element");
-
-    return currentElem->prev;
-}
-
-struct listElement * PushBack (listPtr_t * list, elem_t newElemValue)
+struct listElement_t * listPushBack (listPtr_t * list, elem_t newElemValue)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
-    struct listElement * newElem = (struct listElement *) calloc (1, sizeof(struct listElement));
+    struct listElement_t * newElem = (struct listElement_t *) calloc (1, sizeof(struct listElement_t));
     MY_ASSERT (newElem == nullptr, "Unable to allocate new memory");
 
     if (list->size == 0)
     {
-        return PushFirstElem (list, newElemValue);
+        return listPushFirstElem (list, newElemValue);
     }
 
     newElem->data = newElemValue;
@@ -153,26 +107,26 @@ struct listElement * PushBack (listPtr_t * list, elem_t newElemValue)
     list->ptrToList[0].next->next = newElem;
     list->ptrToList[0].prev->prev = newElem;
 
-    list->ptrToList[0].next = newElem;    
+    list->ptrToList[0].next = newElem;
 
     list->size++;
 
     return newElem;
 }
 
-struct listElement * PushFront (listPtr_t * list, elem_t newElemValue)
+struct listElement_t * listPushFront (listPtr_t * list, elem_t newElemValue)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
-    struct listElement * newElem = (struct listElement *) calloc (1, sizeof(struct listElement));
+    struct listElement_t * newElem = (struct listElement_t *) calloc (1, sizeof(struct listElement_t));
     MY_ASSERT (newElem == nullptr, "Unable to allocate new memory");
 
     if (list->size == 0)
     {
-        return PushFirstElem (list, newElemValue);
+        return listPushFirstElem (list, newElemValue);
     }
 
     newElem->data = newElemValue;
-    
+
     newElem->next = list->ptrToList[0].prev;
     newElem->prev = list->ptrToList[0].next;
 
@@ -186,28 +140,26 @@ struct listElement * PushFront (listPtr_t * list, elem_t newElemValue)
     return newElem;
 }
 
-struct listElement * PushFirstElem (listPtr_t * list, elem_t newElemValue)
+struct listElement_t * listPushFirstElem (listPtr_t * list, elem_t newElemValue)
 {
-    struct listElement * newElem = (struct listElement *) calloc (1, sizeof(struct listElement));
+    struct listElement_t * newElem = (struct listElement_t *) calloc (1, sizeof(struct listElement_t));
     MY_ASSERT (newElem == nullptr, "There is no access to list");
     list->ptrToList[0].next = newElem;
     list->ptrToList[0].prev = newElem;
 
-    printf ("PushFirstElem works now\n");
-
     newElem->data = newElemValue;
     newElem->next = list->ptrToList[0].prev;
-    newElem->prev = list->ptrToList[0].next;  
+    newElem->prev = list->ptrToList[0].next;
 
     list->size++;
 
     return newElem;
 }
 
-struct listElement * ListInsertBefore (listPtr_t * list, struct listElement * currentElem, elem_t newElemValue)
+struct listElement_t * listInsertBefore (listPtr_t * list, struct listElement_t * currentElem, elem_t newElemValue)
 {
     MY_ASSERT (list == nullptr, "Unable to allocate new memory");
-    struct listElement * newElem = (struct listElement *) calloc (1, sizeof(struct listElement));
+    struct listElement_t * newElem = (struct listElement_t *) calloc (1, sizeof(struct listElement_t));
     MY_ASSERT (newElem == nullptr, "Unable to allocate new memory");
 
     newElem->data = newElemValue;
@@ -222,10 +174,10 @@ struct listElement * ListInsertBefore (listPtr_t * list, struct listElement * cu
     return newElem;
 }
 
-struct listElement * ListInsertAfter (listPtr_t * list, struct listElement * currentElem, elem_t newElemValue)
+struct listElement_t * listInsertAfter (listPtr_t * list, struct listElement_t * currentElem, elem_t newElemValue)
 {
     MY_ASSERT (list == nullptr, "Unable to allocate new memory");
-    struct listElement * newElem = (struct listElement *) calloc (1, sizeof(struct listElement));
+    struct listElement_t * newElem = (struct listElement_t *) calloc (1, sizeof(struct listElement_t));
     MY_ASSERT (newElem == nullptr, "Unable to allocate new memory");
 
     newElem->data = newElemValue;
@@ -242,48 +194,33 @@ struct listElement * ListInsertAfter (listPtr_t * list, struct listElement * cur
 
 void listDestructor (listPtr_t * list)
 {
-    // printf ("list->ptrToList[0].prev = %p and the data of it is \"%.2lf\"\n", list->ptrToList[0].prev, list->ptrToList[0].prev->data);
     MY_ASSERT(list == nullptr, "There is no access to list");
-    // printf ("in Destructor\n");
-    struct listElement * current = list->ptrToList[0].prev;
-    // printf ("\nhead = %p\n\n", &(list->ptrToList[0]));
-    // printf ("Before for\n");
+    struct listElement_t * current = list->ptrToList[0].prev;
     for (int i = 0; i < list->size - 1; i++)
     {
-        // printf ("begin in for: %d\n", i);
-        // printf ("current->data before = %.2lf\n", current->data);
-        current->data = poison;
-        // printf ("current->data after = %.2lf\n", current->data);
-        // printf ("1 operation\n");
+        current->data = POISON_LISTPTR;
         current->prev = nullptr;
-        // printf ("2 operation\n");
-        // printf ("current before = %p\n", current);
-        //(*tmp)->next = nullptr; 
         current = current->next;
         current->prev->next = nullptr;
-        // printf ("current after = %p\n", current);
-        // printf ("current.data = %.2lf\n", current->data);
-        // printf ("3 operation\n");
-        // printf ("4 operation\n");
     }
 
-    current->data = poison;
+    current->data = POISON_LISTPTR;
     current->prev = nullptr;
     current->next = nullptr;
-             
+
     list->ptrToList[0].prev = nullptr;
     list->ptrToList[0].next = nullptr;
     list->size = 0;
 }
 
-void listDeleteElem (listPtr_t * list, struct listElement * currentElem)
+void listDeleteElem (listPtr_t * list, struct listElement_t * currentElem)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
     MY_ASSERT (currentElem == nullptr, "Unable to find this element");
 
     if (list->size == 1)
     {
-        currentElem->data = poison;
+        currentElem->data = POISON_LISTPTR;
         currentElem->next = nullptr;
         currentElem->prev = nullptr;
 
@@ -302,86 +239,72 @@ void listDeleteElem (listPtr_t * list, struct listElement * currentElem)
     currentElem->prev->next = currentElem->next;
     currentElem->next->prev = currentElem->prev;
 
-    currentElem->data = poison;
+    currentElem->data = POISON_LISTPTR;
     currentElem->next = nullptr;
     currentElem->prev = nullptr;
 
     list->size--;
 }
 
-struct listElement * AccessFirstElem (const listPtr_t * list)
+struct listElement_t * listAccessFirstElem (const listPtr_t * list)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
 
     return list->ptrToList[0].prev;
 }
 
-struct listElement * AccessLastElem (const listPtr_t * list)
+struct listElement_t * listAccessLastElem (const listPtr_t * list)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
 
     return list->ptrToList[0].next;
 }
 
-size_t listSize (const listPtr_t * list)
+struct listElement_t * listFindElemByValue (const listPtr_t * list, elem_t value)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
 
-    return list->size;
-}
-
-struct listElement * listFindElemByValue (const listPtr_t * list, elem_t value)
-{
-    MY_ASSERT (list == nullptr, "There is no access to list");
-    
-    struct listElement * current = list->ptrToList[0].prev;
+    struct listElement_t * current = list->ptrToList[0].prev;
 
     for (int i = 0; i < list->size && current->data != value; i++)
     {
         current = current->next;
     }
-    printf ("current->data = %.2lf\n", current->data);
     return current;
 }
 
-struct listElement * listFindElemByNumber (const listPtr_t * list, elem_t number)
+struct listElement_t * listFindElemByNumber (const listPtr_t * list, size_t number)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
 
-    struct listElement * current = list->ptrToList[0].prev;
+    struct listElement_t * current = list->ptrToList[0].prev;
 
     for (int i = 0; i < number && i < list->size; i++)
     {
         current = current->next;
     }
-    
+
     return current;
 }
 
-struct listElement * validator (const listPtr_t * list)
+struct listElement_t * listValidator (const listPtr_t * list, FILE * const log)
 {
     MY_ASSERT (list == nullptr, "There is no access to list");
-
-    FILE * log = fopen ("log.txt", "a");
     MY_ASSERT (log == nullptr, "There is no access to list");
 
-    struct listElement * current = list->ptrToList[0].prev;
+    struct listElement_t * current = list->ptrToList[0].prev;
 
     for (int i = 0; i < list->size; i++)
     {
         if (current->next->prev->data == current->data && current->prev->next->data == current->data)
         {
-            // printf ("in if in valid\n");
             current = current->next;
-            // printf ("after\n");
         }
-        else 
+        else
         {
-            // printf ("lol\n");
             fprintf (log, "The error occurred around an element with a value of \"%.2lf\"\n", current->data);
-            // printf ("current->next->prev->data = %.2lf, current->prev->next->data = %.2lf, current->data = %.2lf\n", current->next->prev->data, current->prev->next->data, current->data);
             printf ("A small error has occurred\n");
-            listDump (list);
+            listDump (list, log);
             return current;
         }
     }
@@ -391,34 +314,36 @@ struct listElement * validator (const listPtr_t * list)
     return nullptr;
 }
 
-void listGraphviz (const listPtr_t * list)
+void listGraphviz (const listPtr_t * list, const char * nameDOTfile, FILE * ptrHTMLfile)
 {
-    FILE * ptrGraph = fopen ("GraphForPtrList.dot", "w");
+    FILE * ptrGraph = fopen (nameDOTfile, "w");
     MY_ASSERT (ptrGraph == nullptr, "There is no access to dump file for graphviz");
 
     dumpline("digraph G {\n");
     dumpline("  graph [dpi = 100];\n\n");
     dumpline("  ranksep = 1.5;\n\n");
     dumpline("  splines = ortho;\n\n");
-    
+
     dumpline("  {rank = min;\n");
     dumpline("          above_node[shape = rectangle, style = \"rounded, invis\", fixedsize = true, height = 1, width = 2, fontsize = 30, label = \"Hi!\", width = 3];");
     dumpline("  }\n");
     dumpline("  {rank = same;\n");
-    
-    dumpline("  node0[shape = record, style = \"rounded, filled\", color = \"#8c6bb1\", label=\"size = %zu|<h0>head = %.2lf|<t0>tail = %.2lf\"];\n",, list->size, list->ptrToList[0].prev->data, list->ptrToList[0].next->data);
+
+    dumpline("  node0[shape = record, style = \"rounded, filled\", color = \"#8c6bb1\", label=\"size = %zu|<h0>head = %.2lf|<t0>tail = %.2lf\"];\n",
+             list->size, list->ptrToList[0].prev->data, list->ptrToList[0].next->data);
 
     dumpline("  edge[minlen = 3, penwidth = 3];\n");
     dumpline("  node[shape = rectangle, style = \"rounded, filled\",\n");
     dumpline("              fixedsize = true, height = 1, width = 2,\n");
     dumpline("              penwidth = 4, color =\"#fa9fb5\", fontsize = 30];\n\n");
 
-    struct listElement * current = list->ptrToList[0].prev;
+    struct listElement_t * current = list->ptrToList[0].prev;
     for (int i = 1; i < list->size + 1; i++)
     {
-        dumpline("  node%d[fillcolor = \"#ffffcc\", label = \"%.2lf\"];\n",, i, current->data);
+        dumpline("  node%d[fillcolor = \"#ffffcc\", label = \"%.2lf\"];\n", i, current->data);
         current = current->next;
     }
+
     dumpline("  }\n");
     dumpline("  {rank = max;\n");
     dumpline("          below_node[style = invis, label = \"Bye!\", width = 3];\n");
@@ -427,47 +352,59 @@ void listGraphviz (const listPtr_t * list)
     dumpline("  above_node -> node0 [style = invis];\n");
     dumpline("  below_node -> node0 [style = invis];\n");
     dumpline("  node0:h0 -> node1 [color = blue];\n");
-    dumpline("  node0:t0 -> node%zu [color = blue];\n",, list->size);
+    dumpline("  node0:t0 -> node%zu [color = blue];\n", list->size);
 
     for (int i = 1; i < list->size; i++)
     {
-        dumpline("  node%d -> node%d [color = black];\n",, i, i+1);
-        dumpline("  node%d -> node%d [color = black];\n",, i+1, i);
+        dumpline("  node%d -> node%d [color = black];\n", i, i+1);
+        dumpline("  node%d -> node%d [color = black];\n", i+1, i);
     }
-    dumpline("  node1 -> node%zu [color = black];\n",, list->size);
-    dumpline("  node%zu -> node1 [color = black];\n",, list->size);
+    dumpline("  node1 -> node%zu [color = black];\n", list->size);
+    dumpline("  node%zu -> node1 [color = black];\n", list->size);
 
     dumpline("}\n\n");
 
     fflush (ptrGraph);
     fclose (ptrGraph);
 
-    cmdLine (times_push_html);
+    cmdLine (NUMBER_OF_GRAPHIC_DUMPS, nameDOTfile);
 
-    createHTMLfile (&times_push_html);
+    createHTMLfile (&NUMBER_OF_GRAPHIC_DUMPS, ptrHTMLfile);
 }
 
-void cmdLine (int num)
+struct listElement_t * listPtrToNextElement (struct listElement_t * currentElem)
 {
-    char buf[100] = {};
-    sprintf(buf, "dot -T png -o graph%d.png GraphForPtrList.dot", num);\
-    system(buf);
+    MY_ASSERT (currentElem == nullptr, "There is no access to current element");
+    return currentElem->next;
 }
 
-void createHTMLfile (int * num)
+struct listElement_t * listPtrToPrevElement (struct listElement_t * currentElem)
 {
-    FILE * graphicBuf = fopen("HTMLBuf.html", "a");
-    MY_ASSERT (graphicBuf == nullptr, "Unable to access to file");
-
-    char buf[60] = {};
-    sprintf (buf, "graph%d.png", *num);
-
-    print_html("<pre>\n");
-    print_html("<img src=\"%s\" alt=\"dump №%d\"/>\n",, buf, *num);
-    print_html("</pre>\n");
-
-    (*num)++;
-
-    fflush (graphicBuf);
-    fclose (graphicBuf);
+    MY_ASSERT (currentElem == nullptr, "There is no access to current element");
+    return currentElem->prev;
 }
+
+size_t listSize (const listPtr_t * list)
+{
+    MY_ASSERT (list == nullptr, "There is no access to list");
+    return list->size;
+}
+
+FILE * listSystemOfLogs (const char * nameLogForList)
+{
+    MY_ASSERT (nameLogForList == nullptr, "There is no access to name of logfile");
+    FILE * log = fopen (nameLogForList, "a");
+
+    return log;
+}
+
+FILE * listCreateHTMLfileForGraphviz (const char * nameFile)
+{
+    MY_ASSERT (nameFile == nullptr, "There is no access to name of logfile");
+    FILE * HTMLforGraphviz = fopen (nameFile, "a");
+
+    return HTMLforGraphviz;
+}
+
+
+
