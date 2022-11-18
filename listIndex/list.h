@@ -1,21 +1,15 @@
+#ifndef LIST_H
+#define LIST_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "my_assert.h"
-#include <math.h> //for NAN;
-
-#define STANDART_SIZE 20;
-#define LONG_LINE "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
-#define LINE_ERROR "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-#define dumpline(command, ...) fprintf(graph, command __VA_ARGS__)
-#define print_html(command, ...) fprintf(graphicBuf, command __VA_ARGS__)
-
-#define LIST_OK(List, listInfo)\
-    validator (List, listInfo);
+#include <math.h>
 
 typedef double elem_t;
-const double poison = NAN;
+const double POISON = NAN;
 
-static int times_push_html = 1;
+static int NUMBER_OF_GRAPHIC_DUMPS = 1;
 
 typedef struct {
     size_t prev;
@@ -26,40 +20,41 @@ typedef struct {
 typedef struct {
     size_t size;
     size_t capacity;
-    size_t freePlace; //логический номер свободной ячейки
+    size_t freePlace;
 
-    size_t head; // логический номер первого элемента
-    size_t tail; // логический номер последнего элемента
+    size_t head;
+    size_t tail;
 
 } info_t;
 
+list_t * listConstruct              (info_t * listInfo, size_t customCapacity);
 
-list_t * listConstruct (info_t * listInfo, size_t customCapacity);
+void     listResize                 (list_t ** List, info_t * listInfo);
+void     fillingNewFields           (list_t *  list, size_t   start,    size_t finish);
+void     listDump                   (info_t *   info, list_t ** List);
+void     listDestructor             (list_t ** List, info_t * listInfo);
+void     listDeleteThisElem         (list_t *  List, info_t * listInfo, size_t num_of_count);
 
-void     listResize              (list_t ** List, info_t * listInfo);
-void     fillingNewFields        (list_t *  list, size_t   start,    size_t finish);
-void     listDump                (info_t *   info, list_t ** List);
-void     ListDestructor          (list_t ** List, info_t * listInfo);
-void     ListDeleteThisElem      (list_t *  List, info_t * listInfo, size_t num_of_count);
+size_t   listPushBack               (list_t ** List, info_t * listInfo, elem_t newMemb);
+size_t   listPushFront              (list_t ** List, info_t * listInfo, elem_t newMemb);
+size_t   listInsertBeforeThisNum    (list_t ** List, info_t * listInfo, elem_t newMemb, size_t num_of_count);
+size_t   listInsertAfterThisNum     (list_t ** List, info_t * listInfo, elem_t newMemb, size_t num_of_count);
 
-size_t   PushBack                (list_t ** List, info_t * listInfo, elem_t newMemb);
-size_t   PushFront               (list_t ** List, info_t * listInfo, elem_t newMemb);
-size_t   ListInsertBeforeThisNum (list_t ** List, info_t * listInfo, elem_t newMemb, size_t num_of_count);
-size_t   ListInsertAfterThisNum  (list_t ** List, info_t * listInfo, elem_t newMemb, size_t num_of_count);
+size_t   listAccessFirstElem        (info_t *  info);
+size_t   listAccessLastElem         (info_t *  info);
+size_t   listEmpty                  (info_t *  info);
+size_t   listSize                   (info_t *  info);
+size_t   listIndexAfterThisElem     (list_t *  List, info_t * info,     size_t num_of_count);
+size_t   listIndexBeforeThisElem    (list_t *  List, info_t * listInfo, size_t num_of_count);
 
-size_t   AccessFirstElem         (info_t *  info);
-size_t   AccessLastElem          (info_t *  info);
-size_t   ListEmpty               (info_t *  info);
-size_t   ListSize                (info_t *  info);
-size_t   IndexAfterThisElem      (list_t *  List, info_t * info,     size_t num_of_count);
-size_t   IndexBeforeThisElem     (list_t *  List, info_t * listInfo, size_t num_of_count);
+elem_t   listFindElemLogNum         (list_t *  List, info_t * listInfo, size_t num_of_count);
+size_t   listFindElemByValue        (list_t *  List, info_t * listInfo, elem_t num_of_count);
 
-elem_t   FindElemLogNum          (list_t *  List, info_t * listInfo, size_t num_of_count);
-size_t   FindElemByValue         (list_t *  List, info_t * listInfo, elem_t num_of_count);
+list_t * listSort                   (list_t ** List, info_t  *  listInfo);
 
-list_t * ListSort                (list_t * List, info_t  *  listInfo);
+void     listGraphviz               (list_t ** List, info_t * listInfo);
+void     listValidator              (list_t *  List, info_t * listInfo);
+void     listCreateHTMLfile         (int *     num);
+void     listCmdLine                (int       num);
 
-void     Graphviz                (list_t ** List, info_t * listInfo);
-void     validator               (list_t *  List, info_t * listInfo);
-void     createHTMLfile          (int *     num);
-void     cmdLine                 (int       num);
+#endif
